@@ -1,11 +1,12 @@
- from fastapi import FastAPI
+from fastapi import FastAPI
 import httpx
 app = FastAPI()
 
 CODESPACE_URL = "https://solid-space-robot-jjx494q6jggg3557r-8080.app.github.dev"
 
 @app.get("/")
-def root(): return {"status": "Railway Proxy OK"}
+def root(): 
+    return {"status": "Railway Proxy OK"}
 
 @app.get("/health")
 async def health():
