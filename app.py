@@ -4,8 +4,8 @@ import os
 
 app = FastAPI()
 
-# Render ke Environment tab me ye variable add kar dena
-OPENROAD_BASE_URL = os.getenv("OPENROAD_BASE_URL", "https://api.openroad.com")
+# Environment variables se URL aur Key lenge
+OPENROAD_BASE_URL = os.getenv("OPENROAD_BASE_URL", "https://httpbin.org")  # Test ke liye httpbin daala hai
 OPENROAD_API_KEY = os.getenv("OPENROAD_API_KEY", "")
 
 @app.get("/")
@@ -14,7 +14,7 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "OK"}
+    return {"status": "OK", "target": OPENROAD_BASE_URL}
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_to_openroad(path: str, request: Request):
@@ -23,7 +23,6 @@ async def proxy_to_openroad(path: str, request: Request):
             url = f"{OPENROAD_BASE_URL}/{path}"
             headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
             
-            # Agar API key hai to header me add kar de
             if OPENROAD_API_KEY:
                 headers['Authorization'] = f"Bearer {OPENROAD_API_KEY}"
 
@@ -41,6 +40,4 @@ async def proxy_to_openroad(path: str, request: Request):
                 headers=dict(resp.headers)
             )
     except Exception as e:
-        # Ab error browser me hi dikhega
         return {"error": "Proxy Failed", "details": str(e), "target_url": f"{OPENROAD_BASE_URL}/{path}"}
-        )
