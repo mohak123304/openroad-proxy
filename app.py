@@ -1,10 +1,11 @@
 from fastapi import FastAPI
+
 app = FastAPI()
 
 @app.get("/")
-def root(): 
-    return {"status": "Railway OK"}
+def read_root():
+    return {"status": "Railway is running"}
 
 @app.get("/health")
-def health():
-    return {"status": "Proxy OK"}  # Codespace call hata diya yaha se
+def health_check():
+    return {"status": "OK"}  # Codespace ko call mat kar yaha
