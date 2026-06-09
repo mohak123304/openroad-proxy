@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Request, Response
 import httpx
+import os
 
 app = FastAPI()
 
-# Ye OpenRoad ka asli API URL hai. Client se confirm kar lena.
-OPENROAD_BASE_URL = "https://api.openroad.com" 
+# Render ke Environment tab me ye variable add kar dena
+OPENROAD_BASE_URL = os.getenv("OPENROAD_BASE_URL", "https://api.openroad.com")
+OPENROAD_API_KEY = os.getenv("OPENROAD_API_KEY", "")
 
 @app.get("/")
 def root():
@@ -16,25 +18,29 @@ def health():
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_to_openroad(path: str, request: Request):
-    async with httpx.AsyncClient() as client:
-        # Client ki request ko OpenRoad tak forward karo
-        url = f"{OPENROAD_BASE_URL}/{path}"
-        
-        # Headers copy karo, 'host' hata ke
-        headers = {k: v for k, v in request.headers.items() if k.lower() != 'host'}
-        
-        # OpenRoad ko request bhejo
-        resp = await client.request(
-            method=request.method,
-            url=url,
-            headers=headers,
-            params=request.query_params,
-            content=await request.body()
-        )
-        
-        # OpenRoad ka response client ko wapas bhejo
-        return Response(
-            content=resp.content,
-            status_code=resp.status_code,
-            headers=dict(resp.headers)
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            url = f"{OPENROAD_BASE_URL}/{path}"
+            headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'content-length']}
+            
+            # Agar API key hai to header me add kar de
+            if OPENROAD_API_KEY:
+                headers['Authorization'] = f"Bearer {OPENROAD_API_KEY}"
+
+            resp = await client.request(
+                method=request.method,
+                url=url,
+                headers=headers,
+                params=request.query_params,
+                content=await request.body()
+            )
+            
+            return Response(
+                content=resp.content,
+                status_code=resp.status_code,
+                headers=dict(resp.headers)
+            )
+    except Exception as e:
+        # Ab error browser me hi dikhega
+        return {"error": "Proxy Failed", "details": str(e), "target_url": f"{OPENROAD_BASE_URL}/{path}"}
         )
