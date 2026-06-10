@@ -72,7 +72,6 @@ def start_flow(request: FlowRequest):
         "estimated_completion": "45 minutes",
         "check_status": f"/flow/status/{request_id}"
     }
-    
   @app.get("/admin/analytics")
 def get_analytics():
     return {
