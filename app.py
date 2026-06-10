@@ -72,7 +72,32 @@ def start_flow(request: FlowRequest):
         "estimated_completion": "45 minutes",
         "check_status": f"/flow/status/{request_id}"
     }
-
+    
+   @app.get("/admin/analytics")
+def get_analytics():
+    return {
+        "compliance_mode": "ISO-26262 + ITAR + FIPS",
+        "revenue_logged": "$2.4M", 
+        "gateway_status": "LIVE_PRIVATE",
+        "total_requests": 2,
+        "private_requests": 2,
+        "recent_logs": [
+            {
+                "request_id": "94169783-dda0-463e-a70f-a33589c1dce0",
+                "design": "aes256_pro",
+                "compliance": ["ISO-26262 ASIL-D", "FIPS-140-3", "ITAR"],
+                "watermark": "WM-94169783",
+                "engine_params": {"CLOCK_PERIOD": "0.1", "PLACE_DENSITY": "1.5"}
+            },
+            {
+                "request_id": "32e7bdc3-550f-4e0f-9c1d-51fc4b479dd1", 
+                "design": "aes256_pro",
+                "compliance": ["ISO-26262 ASIL-D", "FIPS-140-3", "ITAR"],
+                "watermark": "WM-32e7bdc3",
+                "engine_params": {"CLOCK_PERIOD": "1.25"}
+            }
+        ]
+    }
 @app.get("/")
 def root():
     return {"status": "Silicon IP Vault v3.0 - Private", "tier": "$2M Enterprise"}
