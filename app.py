@@ -6,60 +6,46 @@ import datetime
 
 app = FastAPI(title="Silicon IP Vault - Private Gateway", version="3.0")
 
-# UPGRADED PRIVATE ENGINE CATALOG - $2M TIER
 SUPPORTED_DESIGNS = {
-    "gcd": {
-        "name": "GCD Core - Baseline",
-        "desc": "13K gates, 50MHz reference design",
-        "tier": "public",
-        "price": "included"
-    },
+    "gcd": {"name": "GCD Core", "tier": "public"},
     "aes256_pro": {
         "name": "AES-256 PRO - Hardened Crypto",
-        "desc": "28K gates, 800MHz, DPA-resistant, ITAR-controlled",
+        "desc": "28K gates, 800MHz, DPA-resistant",
         "tier": "private", 
-        "price": "$400K license",
-        "compliance": ["ISO-26262 ASIL-D", "FIPS-140-3", "ITAR"],
-        "features": ["Side-channel protection", "Key-schedule hardening"]
+        "price": "$400K",
+        "compliance": ["ISO-26262 ASIL-D", "FIPS-140-3", "ITAR"]
     },
     "ibex_secure": {
-        "name": "Ibex RISC-V SecureCore",
-        "desc": "45K gates, 650MHz, PMP + ePMP, TrustZone equivalent",
+        "name": "Ibex RISC-V SecureCore", 
+        "desc": "45K gates, 650MHz, PMP + TrustZone",
         "tier": "private",
-        "price": "$500K license", 
-        "compliance": ["ISO-26262", "DO-254", "ARM-PSA"],
-        "features": ["Physical Memory Protection", "Crypto accelerators", "Secure boot"]
+        "price": "$500K",
+        "compliance": ["ISO-26262", "DO-254"]
     },
     "nvdla_small": {
         "name": "NVDLA AI Accelerator S1",
-        "desc": "850K gates, 1.2GHz, INT8/FP16, 4 TOPS",
-        "tier": "private",
-        "price": "$600K license",
-        "compliance": ["ISO-26262", "Automotive Grade"],
-        "features": ["NVIDIA Deep Learning", "Automotive qualified", "ECC memory"]
+        "desc": "850K gates, 1.2GHz, 4 TOPS",
+        "tier": "private", 
+        "price": "$600K",
+        "compliance": ["ISO-26262"]
     },
     "serdes_56g": {
         "name": "56G-LR SerDes PHY",
-        "desc": "112G PAM4 capable, PCIe-Gen6, 7nm optimized",
+        "desc": "112G PAM4, PCIe-Gen6",
         "tier": "private",
-        "price": "$800K license",
-        "compliance": ["PCIe-6.0", "Ethernet-800G"],
-        "features": ["DFE+FFE", "Advanced CDR", "Low jitter PLL"]
+        "price": "$800K"
     },
     "chiplets_d2d": {
         "name": "UCIe Die-to-Die Controller",
-        "desc": "1.6Tbps/mm shoreline, Advanced Packaging ready",
+        "desc": "1.6Tbps/mm, 3D-IC ready", 
         "tier": "private",
-        "price": "$1.2M license",
-        "compliance": ["UCIe-1.1", "JEDEC"],
-        "features": ["2.5D/3D integration", "Protocol-aware PHY"]
+        "price": "$1.2M"
     }
 }
 
 class FlowRequest(BaseModel):
     design: str
     engine_params: Dict[str, Any]
-    user_id: str = "client_cto"
     tier: str = "private"
 
 @app.get("/designs")
@@ -69,55 +55,22 @@ def get_designs():
 @app.post("/flow/design")
 def start_flow(request: FlowRequest):
     if request.design not in SUPPORTED_DESIGNS:
-        raise HTTPException(404, "Design not found")
+        raise HTTPException(400, f"Design not supported. Use: {list(SUPPORTED_DESIGNS.keys())}")
     
     design_info = SUPPORTED_DESIGNS[request.design]
+    request_id = str(uuid.uuid4())
     
-    if design_info["tier"] == "private":
-        # Private IP audit log
-        audit_entry = {
-            "request_id": str(uuid.uuid4()),
-            "design": request.design,
-            "user_id": request.user_id,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-            "engine_params": request.engine_params,
-            "compliance": design_info.get("compliance", []),
-            "price": design_info["price"],
-            "watermark": f"WM-{uuid.uuid4().hex[:8]}",
-            "status": "queued_secure_vault"
-        }
-        return {
-            "request_id": audit_entry["request_id"],
-            "design": request.design,
-            "tier": "PRIVATE",
-            "status": "queued",
-            "message": f"{design_info['name']} secured in private vault",
-            "compliance": design_info["compliance"],
-            "watermark": audit_entry["watermark"],
-            "estimated_completion": "45 minutes",
-            "check_status": f"/flow/status/{audit_entry['request_id']}"
-        }
-    else:
-        return {"status": "public_design", "message": "Use private tier for production"}
-
-@app.get("/admin/analytics")
-def get_analytics():
     return {
-        "gateway_status": "LIVE_PRIVATE",
-        "total_requests": 12,
-        "private_requests": 8,
-        "supported_designs": list(SUPPORTED_DESIGNS.keys()),
-        "compliance_mode": "ISO-26262 + ITAR + FIPS",
-        "revenue_logged": "$2.4M",
-        "recent_logs": [
-            {
-                "request_id": str(uuid.uuid4()),
-                "design": "aes256_pro",
-                "user_id": "client_cto",
-                "compliance": ["ISO-26262 ASIL-D", "ITAR"],
-                "timestamp": datetime.datetime.utcnow().isoformat()
-            }
-        ]
+        "request_id": request_id,
+        "design": request.design,
+        "tier": "PRIVATE",
+        "status": "queued",
+        "message": f"{design_info['name']} secured in private vault",
+        "compliance": design_info.get("compliance", []),
+        "watermark": f"WM-{request_id[:8]}",
+        "price": design_info.get("price", "N/A"),
+        "estimated_completion": "45 minutes",
+        "check_status": f"/flow/status/{request_id}"
     }
 
 @app.get("/")
