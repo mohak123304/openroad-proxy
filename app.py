@@ -73,7 +73,7 @@ def start_flow(request: FlowRequest):
         "check_status": f"/flow/status/{request_id}"
     }
     
-   @app.get("/admin/analytics")
+  @app.get("/admin/analytics")
 def get_analytics():
     return {
         "compliance_mode": "ISO-26262 + ITAR + FIPS",
@@ -98,6 +98,7 @@ def get_analytics():
             }
         ]
     }
+    
 @app.get("/")
 def root():
     return {"status": "Silicon IP Vault v3.0 - Private", "tier": "$2M Enterprise"}
